@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Efecto Parallax por Secciones – JAXX (v3 FORZADO sin librerías)</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body { 
+      margin: 0; 
+      font-family: system-ui, Arial, sans-serif; 
+      background: #0d0d0d; 
+      color: #fff; 
+      overflow-x: hidden; 
+    }
+
+    section {
+      position: relative;
+      height: 110vh;
+      min-height: 100svh;
+      display: grid;
+      place-items: center;
+      isolation: isolate;
+      overflow: hidden;
+    }
+
+    .bg {
+      position: absolute; inset: 0;
+      background-size: cover; 
+      background-position: center; 
+      background-repeat: no-repeat;
+      transform-origin: center;
+      z-index: 0;
+      will-change: transform, opacity;
+      backface-visibility: hidden;
+      transform: scale(1.2);
+      opacity: 1;
+    }
+
+    .shade { 
+      position: absolute; inset: 0; 
+      z-index: 1; 
+      background: linear-gradient(180deg, rgba(0,0,0,.35), rgba(0,0,0,.25)); 
+      pointer-events: none; 
+    }
+
+    .content { 
+      position: relative; 
+      z-index: 2; 
+      text-align: center; 
+      font-weight: 700; 
+      letter-spacing: .5px; 
+      text-shadow: 0 6px 20px rgba(0,0,0,.6); 
+    }
+
+    /* --- Letras Disney --- */
+    .disney-text {
+      position: relative;
+      display: flex;
+      font-size: clamp(2.5rem, 8vw, 5rem);
+      font-weight: bold;
+      text-transform: uppercase;
+      white-space: nowrap;
+      margin-bottom: 1.5rem;
+      justify-content: center;
+    }
+    .disney-text span {
+      opacity: 0;
+      text-shadow: 0 0 0.3vw #fff, 0 0 0.6vw #ffd700, 0 0 1vw #ffd700;
+      animation: appear 3s infinite;
+    }
+    @keyframes appear {
+      0% { opacity: 0; transform: translateY(-1.5vw); text-shadow: none; }
+      20% { opacity: 1; transform: translateY(0); text-shadow: 0 0 0.6vw #fff, 0 0 0.8vw #ffd700, 0 0 1.2vw #ffd700; }
+      60% { opacity: 1; text-shadow: 0 0 0.5vw #fff, 0 0 1vw #ffd700, 0 0 1.5vw #ffd700; }
+      80% { opacity: 0.5; }
+      100% { opacity: 0; }
+    }
+    .disney-text span:nth-child(1){animation-delay:0s;}
+    .disney-text span:nth-child(2){animation-delay:0.3s;}
+    .disney-text span:nth-child(3){animation-delay:0.6s;}
+    .disney-text span:nth-child(4){animation-delay:0.9s;}
+    .disney-text span:nth-child(5){animation-delay:1.2s;}
+    .disney-text span:nth-child(6){animation-delay:1.5s;}
+    .disney-text span:nth-child(7){animation-delay:1.8s;}
+    .disney-text span:nth-child(8){animation-delay:2.1s;}
+    .disney-text span:nth-child(9){animation-delay:2.4s;}
+
+    .shooting-star {
+      position: absolute;
+      width: 1.5vw; height: 1.5vw;
+      background: radial-gradient(circle, #fff 0%, #ffd700 70%);
+      border-radius: 50%;
+      box-shadow: 0 0 0.3vw #fff, 0 0 0.6vw #ffd700, 0 0 1vw #ffd700, 0 0 1.5vw #ffd700;
+      animation: starCurve 3s ease-in-out infinite;
+    }
+    @keyframes starCurve {
+      0% { transform: translate(0vw,0vw) scale(0.5); opacity:1; }
+      20% { transform: translate(10vw,-1vw) scale(0.8); opacity:1; }
+      40% { transform: translate(25vw,0.5vw) scale(1); opacity:1; }
+      60% { transform: translate(45vw,-0.5vw) scale(1); opacity:1; }
+      80% { transform: translate(65vw,1vw) scale(0.6); opacity:0.8; }
+      100% { transform: translate(70vw,1vw) scale(0.5); opacity:0; }
+    }
+
+    .container { 
+      text-align: center; 
+      max-width: 900px; 
+      margin: 0 auto; 
+      padding: 0 15px;
+    }
+    .tagline { 
+      font-size: clamp(1.2rem, 4vw, 1.6rem); 
+      line-height: 1.5; 
+    }
+    .dynamic-container { 
+      display: inline-flex; 
+      gap: 8px; 
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .dynamic { 
+      color: #00d4ff; 
+      font-weight: bold; 
+      animation: glow 3s ease-in-out infinite; 
+      font-size: clamp(1.4rem, 5vw, 1.8rem); 
+    }
+    .fixed { color: #fff; }
+    @keyframes glow {
+      0% { text-shadow: 0 0 5px rgba(0,212,255,0.5); }
+      50% { text-shadow: 0 0 20px rgba(0,212,255,0.8), 0 0 30px rgba(255,200,0,0.6); }
+      100% { text-shadow: 0 0 5px rgba(0,212,255,0.5); }
+    }
+
+    /* --- Carrusel RESPONSIVE y CENTRADO --- */
+    .carousel {
+      position: relative;
+      width: min(95vw, 500px);   /* Ajusta ancho máximo */
+      height: min(60vh, 300px);  /* Altura proporcional */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 20px auto;          /* Centrado en .content */
+      overflow: hidden;
+    }
+
+    .card {
+      position: absolute;
+      width: 80%;                 /* Relativo al carrusel */
+      height: 80%;
+      max-width: 250px;
+      max-height: 250px;
+      border-radius: 12px;
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+      opacity: 0;
+      /* Centrado absoluto */
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%) translateX(-100%) scale(0.7);
+      z-index: 1;
+    }
+
+    .logo { 
+      width: 90%; 
+      height: auto; 
+      max-height: 120px; 
+      object-fit: contain; 
+    }
+
+    @keyframes slideAndScale {
+      0% { transform: translate(-50%, -50%) translateX(-100%) scale(0.7); opacity: 0; }
+      50% { transform: translate(-50%, -50%) translateX(0) scale(1.1); opacity: 1; z-index: 10; }
+      100% { transform: translate(-50%, -50%) translateX(100%) scale(0.7); opacity: 0; z-index: 1; }
+    }
+
+    .card:nth-child(1) { animation: slideAndScale 8s ease-in-out infinite; }
+    .card:nth-child(2) { animation: slideAndScale 8s ease-in-out infinite 2s; }
+    .card:nth-child(3) { animation: slideAndScale 8s ease-in-out infinite 4s; }
+    .card:nth-child(4) { animation: slideAndScale 8s ease-in-out infinite 6s; }
+
+    /* --- Ocultar scrollbar --- */
+    * {
+      scrollbar-width: none; /* Firefox */
+    }
+    *::-webkit-scrollbar {
+      display: none; /* Chrome, Safari, Edge */
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Sección 1 -->
+  <section>
+    <div class="bg" style="background-image: url('https://i.imgur.com/Y8zRybi.png');"></div>
+    <div class="shade"></div>
+    <div class="content">
+      <div class="disney-text">
+        <span>T</span><span>e</span><span>c</span><span>h</span><span>m</span><span>a</span><span>n</span><span>T</span><span>S</span>
+        <div class="shooting-star"></div>
+      </div>
+      <div class="container">
+        <p class="tagline">
+          Tu tienda online ofrece:
+          <span class="dynamic-container">
+            <span class="dynamic" id="platform">Netflix</span>
+          </span>
+          <span class="fixed">cuentas de entretenimiento para disfrutar en familia.</span>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Sección 2 -->
+  <section>
+    <div class="bg" style="background-image: url('https://i.imgur.com/AvHvVJh.jpeg');"></div>
+    <div class="shade"></div>
+    <div class="content">
+      <div class="carousel">
+        <div class="card"><img src="https://i.imgur.com/GUbmpgD.png" class="logo" alt="Netflix"></div>
+        <div class="card"><img src="https://i.imgur.com/1Qb4d4q.png" class="logo" alt="Prime Video"></div>
+        <div class="card"><img src="https://i.imgur.com/lSFofbO.png" class="logo" alt="Disney+"></div>
+        <div class="card"><img src="https://i.imgur.com/YmDnl46.png" class="logo" alt="Crunchyroll"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Sección 3 -->
+  <section>
+    <div class="bg" style="background-image: url('https://i.imgur.com/c6PlNqn.png');"></div>
+    <div class="shade"></div>
+    <div class="content">
+      <h2 style="font-size: 2rem; margin: 0 0 1rem;">Sección 3</h2>
+      <p style="font-size: 1.2rem;">Más scroll = más encogimiento + fade.</p>
+    </div>
+  </section>
+
+  <script>
+    // Parallax sin librerías
+    (function(){
+      const sections = Array.from(document.querySelectorAll('section'));
+      let ticking = false;
+      function clamp01(n){ return Math.max(0, Math.min(1, n)); }
+      function computeProgress(rect, vh){ return clamp01((vh - rect.top) / (rect.height + vh)); }
+      function update(){
+        ticking = false;
+        const vh = window.innerHeight || document.documentElement.clientHeight;
+        for (const section of sections){
+          const rect = section.getBoundingClientRect();
+          const p = computeProgress(rect, vh);
+          const bg = section.querySelector('.bg');
+          const scale = 1.2 - 0.4 * p;
+          const opacity = 1.0 - 0.6 * p;
+          bg.style.transform = `scale(${scale.toFixed(3)})`;
+          bg.style.opacity = opacity.toFixed(3);
+        }
+      }
+      function onScroll(){ if (!ticking){ requestAnimationFrame(update); ticking = true; } }
+      update();
+      addEventListener('scroll', onScroll, { passive: true });
+      addEventListener('resize', onScroll);
+    })();
+
+    // Texto dinámico de plataformas
+    const platforms = ["Netflix","PrimeVideo","Max","Disney+","Crunchyroll","YT Premium","Spotify Premium","FlujoTV"];
+    const element = document.getElementById("platform");
+    let index = 0;
+    setInterval(() => {
+      element.textContent = platforms[index];
+      index = (index + 1) % platforms.length;
+    }, 3000);
+  </script>
+</body>
+</html>
